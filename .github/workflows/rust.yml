@@ -15,8 +15,14 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+    - uses: actions-rs/install@v0.1
+      with:
+          crate: cargo-tarpaulin
+          version: latest
     - uses: actions/checkout@v3
     - name: Build
       run: cargo build --verbose
     - name: Run tests
       run: cargo test --verbose
+    - name: Run coverage check
+      run: cargo tarpaulin --ignore-tests
