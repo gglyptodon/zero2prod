@@ -29,7 +29,7 @@ fn spawn_app() -> String {
 }
 
 #[actix_rt::test]
-async fn returns_200_for_valid_form_data() {
+async fn subscribe_returns_200_for_valid_form_data() {
     //Arrange
     let address = spawn_app();
     let client = reqwest::Client::new();
@@ -49,7 +49,7 @@ async fn returns_200_for_valid_form_data() {
 }
 
 #[actix_rt::test]
-async fn returns_400_for_valid_form_data() {
+async fn subscribe_returns_400_for_valid_form_data() {
     //Arrange
     let address = spawn_app();
     let client = reqwest::Client::new();
