@@ -44,7 +44,7 @@ async fn subscribe_returns_200_for_valid_form_data() {
         .expect("Failed to execute request");
 
     //Assert
-    assert!(response.status().is_success());
+    assert_eq!(response.status().as_u16(), 200);
     // todo: assert_eq!(...);
 }
 
@@ -54,9 +54,9 @@ async fn subscribe_returns_400_for_valid_form_data() {
     let address = spawn_app();
     let client = reqwest::Client::new();
     let bad_requests = vec![
-        ("name=le%20guin", "no email"),
-        ("email=ursula_le_guin%40gmail.com", "no name"),
-        ("", "nothing"),
+        ("name=le%20guin", "missing the email"),
+        ("email=ursula_le_guin%40gmail.com", "missing the name"),
+        ("", "missing bot email and name"),
     ];
 
     //Act
@@ -70,11 +70,10 @@ async fn subscribe_returns_400_for_valid_form_data() {
             .expect("Failed to execute request");
 
         //Assert
-
         assert_eq!(
             response.status().as_u16(),
             400,
-            "API did not return 400. Payload was: {}",
+            "API did not return 400 when payload was {}",
             error_message
         );
     }
