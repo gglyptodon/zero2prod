@@ -22,13 +22,16 @@ DB_PASSWORD="${POSTGRES_PASSWORD:=password}"
 DB_NAME="${POSTGRES_DB:=newsletter}"
 DB_PORT="${POSTGRES_PORT:=5432}"
 
-
+# Allow to skip Docker if a dockerized Postgres database is already running
+if [[ -z "${SKIP_DOCKER}" ]]; then 
 docker run \
   -e POSTGRES_USER=${DB_USER} \
   -e POSTGRES_PASSWORD=${DB_PASSWORD} \
   -e POSTGRES_DBE=${DB_NAME} \
   -p "${DB_PORT}":5432 \
   -d postgres postgres -N 1000
+
+fi
 
 export PGPASSWORD="${DB_PASSWORD}"
 
@@ -37,4 +40,9 @@ until psql -h "localhost" -U "${DB_USER}" -p "${DB_PORT}" -d "postgres" -c '\q' 
 >&2 echo "Postgres running on port ${DB_PORT}"
 
 export DATABASE_URL=postgres://${DB_USER}:${DB_PASSWORD}@localhost:${DB_PORT}/${DB_NAME}
+
 sqlx database create
+>&2 echo "Database created."
+
+sqlx migrate run
+>&2 echo "Migrations have been run - ready now!"
