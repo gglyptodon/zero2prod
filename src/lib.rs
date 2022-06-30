@@ -1,16 +1,16 @@
 use actix_web::dev::Server;
 use actix_web::{get, post, web, App, HttpResponse, HttpServer, Responder};
-use std::net::TcpListener;
 use serde_derive::Deserialize;
+use std::net::TcpListener;
 //#[get("/hello/{name}")]
 //pub async fn greet(name: web::Path<String>) -> impl Responder {
 //    format!("Hello {name}!")
 //}
 
 #[derive(Deserialize)]
-struct Info{
+struct Info {
     name: String,
-    email: String
+    email: String,
 }
 
 #[get("/health_check")]
@@ -19,7 +19,7 @@ pub async fn health_check() -> impl Responder {
 }
 #[post("/subscriptions")]
 pub async fn subscribe(info: web::Form<Info>) -> impl Responder {
-    format!("Hello {}, with email: {} ",info.name, info.email )
+    format!("Hello {}, with email: {} ", info.name, info.email)
 }
 
 pub fn run(listener: TcpListener) -> Result<Server, std::io::Error> {
