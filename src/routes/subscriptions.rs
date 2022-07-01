@@ -1,4 +1,4 @@
-use actix_web::{Responder, web, post};
+use actix_web::{post, web, Responder};
 use serde_derive::Deserialize;
 
 #[derive(Deserialize)]
