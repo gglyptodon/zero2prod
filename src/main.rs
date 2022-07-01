@@ -3,7 +3,7 @@ use zero2prod::configuration::get_config;
 use zero2prod::startup::run;
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
-    let settings = get_config().unwrap();
+    let _settings = get_config().unwrap();
     //println!("settings {:?}", settings);
     // Bubble up the io::Error if we failed to bind the address
     // Otherwise call .await on our Server

@@ -1,8 +1,6 @@
-use actix_web::web::Header;
 use reqwest::header::CONTENT_TYPE;
-use std::net::TcpListener;
 use sqlx::{Connection, PgConnection};
-use zero2prod::configuration;
+use std::net::TcpListener;
 use zero2prod::configuration::get_config;
 
 #[actix_rt::test]
@@ -37,7 +35,9 @@ async fn subscribe_returns_200_for_valid_form_data() {
     let address = spawn_app();
     let configuration = get_config().expect("Failed to read config");
     let connection_string = configuration.database.connection_string();
-    let _connection = PgConnection::connect(&connection_string).await.expect("Could not connect to db");
+    let _connection = PgConnection::connect(&connection_string)
+        .await
+        .expect("Could not connect to db");
     let client = reqwest::Client::new();
     let body = "name=le%20guin&email=ursula_le_guin%40gmail.com";
     //Act
@@ -51,7 +51,11 @@ async fn subscribe_returns_200_for_valid_form_data() {
 
     //Assert
     assert_eq!(response.status().as_u16(), 200);
-    // todo: assert_eq!(...);
+    //let saved = sqlx::query!("SELECT email, name from subscriptions",)
+    //    .fetch_one(&mut connection).await
+    //    .expect("could not fetch from subscriptions");
+    //assert_eq!(saved.email, "ursula_le_guin@gmail.com");
+    //assert_eq!(saved.name, "le guin");
 }
 
 #[actix_rt::test]
