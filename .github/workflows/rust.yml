@@ -23,7 +23,7 @@ jobs:
         ports:
           - 5432:5432
     env:
-      SQLX_VERSION: 0.6 # TODO
+      SQLX_VERSION: 0.6.0 # TODO
       SQLX_FEATURES: postgres,native-tls # TODO
     
       
