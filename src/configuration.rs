@@ -52,3 +52,12 @@ impl Settings {
         s.try_deserialize()
     }
 }
+
+impl DbSettings {
+    pub fn connection_string(&self) -> String {
+        format!(
+            "postgres://{}:{}@{}:{}/{}",
+            self.username, self.password, self.host, self.port, self.database_name
+        )
+    }
+}
