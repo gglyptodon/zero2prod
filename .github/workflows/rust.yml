@@ -13,16 +13,55 @@ jobs:
   build:
 
     runs-on: ubuntu-latest
-
+    services:
+      postgres:
+        image: postgres:12
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: password
+          POSTGRES_DB: postgres
+        ports:
+          - 5432:5432
+    env:
+      SQLX_VERSION: 0.6 # TODO
+      SQLX_FEATURES: postgres,native-tls # TODO
+    
+      
     steps:
-    - uses: actions-rs/install@v0.1
-      with:
-          crate: cargo-tarpaulin
-          version: latest
-    - uses: actions/checkout@v3
-    - name: Build
-      run: cargo build --verbose
-    - name: Run tests
-      run: cargo test --verbose
-    - name: Run coverage check
-      run: cargo tarpaulin --ignore-tests
+      - uses: actions/checkout@v3
+      - name: Cache sqlx-cli
+        uses: actions/cache@v2
+        id: cache-sqlx
+        with:
+          path: |
+            ~/.cargo/bin/sqlx
+            key: ${{ runner.os }}-sqlx-${{ env.SQLX_VERSION }}-${{ env.SQLX_FEATURES }}
+      - name: Install sqlx-cli 
+        uses: actions-rs/cargo@v1
+        if: steps.cache-sqlx.outputs.cache-hit == false
+        with:
+          command: install 
+          args: >
+            sqlx-cli
+            --force
+            --version=${{ env.SQLX_VERSION }}
+            --features=${{ env.SQLX_FEATURES }}
+            --no-default-features
+            --locked
+
+      - name: Migrate database
+        run: |
+          sudo apt-get install libpq-dev -y
+          SKIP_DOCKER=true ./scripts/init_db.sh
+
+      - uses: actions-rs/install@v0.1
+        with:
+            crate: cargo-tarpaulin
+            version: latest
+      
+      - name: Build
+        run: cargo build --verbose
+      - name: Run tests
+        run: cargo test --verbose
+      - name: Run coverage check
+        run: cargo tarpaulin --ignore-tests
