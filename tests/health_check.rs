@@ -93,7 +93,7 @@ async fn subscribe_returns_200_for_valid_form_data() {
     let saved = sqlx::query!("SELECT email, name from subscriptions",)
         .fetch_one(&mut connection)
         .await
-        .expect("could not fetch from subscriptions");
+        .expect(format!("could not fetch from subscriptions {}",&connection_string).as_str());
     assert_eq!(saved.email, "ursula_le_guin@gmail.com");
     assert_eq!(saved.name, "le guin");
 }
