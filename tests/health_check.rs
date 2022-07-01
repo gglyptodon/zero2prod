@@ -35,7 +35,7 @@ async fn subscribe_returns_200_for_valid_form_data() {
     let address = spawn_app();
     let configuration = get_config().expect("Failed to read config");
     let connection_string = configuration.database.connection_string();
-    let _connection = PgConnection::connect(&connection_string)
+    let mut connection = PgConnection::connect(&connection_string)
         .await
         .expect("Could not connect to db");
     let client = reqwest::Client::new();
@@ -51,11 +51,11 @@ async fn subscribe_returns_200_for_valid_form_data() {
 
     //Assert
     assert_eq!(response.status().as_u16(), 200);
-    //let saved = sqlx::query!("SELECT email, name from subscriptions",)
-    //    .fetch_one(&mut connection).await
-    //    .expect("could not fetch from subscriptions");
-    //assert_eq!(saved.email, "ursula_le_guin@gmail.com");
-    //assert_eq!(saved.name, "le guin");
+    let saved = sqlx::query!("SELECT email, name from subscriptions",)
+        .fetch_one(&mut connection).await
+        .expect("could not fetch from subscriptions");
+    assert_eq!(saved.email, "ursula_le_guin@gmail.com");
+    assert_eq!(saved.name, "le guin");
 }
 
 #[actix_rt::test]
