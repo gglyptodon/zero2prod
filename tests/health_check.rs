@@ -1,4 +1,3 @@
-use std::fmt::format;
 use reqwest::header::CONTENT_TYPE;
 use sqlx::{Connection, Executor, PgConnection, PgPool};
 use std::net::TcpListener;
@@ -51,7 +50,7 @@ async fn configure_db(config: &DbSettings) -> PgPool {
             .as_str(),
         )
         .await
-        .expect( format!("Failed to create db {}", &config.database_name).as_str());
+        .expect(format!("Failed to create db {}", &config.database_name).as_str());
 
     let connection_pool = PgPool::connect(&config.connection_string())
         .await
@@ -81,13 +80,6 @@ async fn health_check_works() {
 async fn subscribe_returns_200_for_valid_form_data() {
     //Arrange
     let app = spawn_app().await;
-
-    let configuration = get_config().expect("Failed to read config");
-    let connection_string = configuration.database.connection_string();
-    let mut connection = PgConnection::connect(&connection_string)
-        .await
-        .expect("Could not connect to db");
-
     let client = reqwest::Client::new();
     let body = "name=le%20guin&email=ursula_le_guin%40gmail.com";
     //Act
@@ -102,9 +94,9 @@ async fn subscribe_returns_200_for_valid_form_data() {
     //Assert
     assert_eq!(response.status().as_u16(), 200);
     let saved = sqlx::query!("SELECT email, name from subscriptions",)
-        .fetch_one(&mut connection)
+        .fetch_one(&app.pg_pool)
         .await
-        .expect(format!("could not fetch from subscriptions {}",&connection_string).as_str());
+        .expect("could not fetch from subscriptions");
     assert_eq!(saved.email, "ursula_le_guin@gmail.com");
     assert_eq!(saved.name, "le guin");
 }
