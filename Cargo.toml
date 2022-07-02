@@ -9,10 +9,12 @@ path = "src/lib.rs"
 
 [dependencies]
 actix-web = "4.1.0"
+chrono = "0.4.19"
 config = "0.13.1"
 serde = "1.0"
 serde_derive = "1.0"
-sqlx = { version = "0.6", features = [ "runtime-async-std-native-tls", "postgres" ] }
+sqlx = { version = "0.6", features = [ "runtime-async-std-native-tls", "postgres", "uuid", "chrono" ] }
+uuid = {version = "1.1.2", features = ["v4"]}
 
 
 [dev-dependencies]

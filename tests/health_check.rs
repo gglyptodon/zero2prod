@@ -1,12 +1,71 @@
 use reqwest::header::CONTENT_TYPE;
-use sqlx::{Connection, PgConnection};
+use sqlx::{Connection, Executor, PgConnection, PgPool};
 use std::net::TcpListener;
-use zero2prod::configuration::get_config;
+use zero2prod::configuration::{get_config, DbSettings};
 
+pub struct TestApp {
+    pg_pool: PgPool,
+    address: String,
+}
+/// spawns app at random port
+/// reads configuration file
+/// overwrites database name (from config file) to random uuid
+/// calls configure_db (which creates a new database and runs the migrations in .migrations on it)
+/// receives a connection pool for database connection
+/// creates a new server instance with the connection pool
+/// spawns the server and returns a TestApp with server address and the connection pool
+async fn spawn_app() -> TestApp {
+    let listener = TcpListener::bind("127.0.0.1:0").expect("failed to bind to random port");
+    let port = listener.local_addr().unwrap().port();
+
+    let mut configuration = get_config().expect("Failed to read config");
+    configuration.database.database_name = uuid::Uuid::new_v4().to_string();
+    // let connection_string = configuration.database.connection_string();
+    let connection_pool = configure_db(&configuration.database).await;
+
+    let server =
+        zero2prod::startup::run(listener, connection_pool.clone()).expect("Failed to bind address");
+    let _ = tokio::spawn(server);
+    TestApp {
+        address: format!("http://127.0.0.1:{}", port),
+        pg_pool: connection_pool,
+    }
+}
+
+/// Creates a database from config
+/// runs migrations defines in `./migrations`
+/// and returns a connection pool for the new db
+async fn configure_db(config: &DbSettings) -> PgPool {
+    let mut connection = PgConnection::connect(&config.connection_string_without_db())
+        .await
+        .expect("Failed to connect");
+    connection
+        .execute(
+            format!(
+                r#"
+            CREATE DATABASE "{}";
+            "#,
+                &config.database_name
+            )
+            .as_str(),
+        )
+        .await
+        .expect(format!("Failed to create db {}", &config.database_name).as_str());
+
+    let connection_pool = PgPool::connect(&config.connection_string())
+        .await
+        .expect(format!("Cannot connect to {}", &config.connection_string()).as_str());
+
+    sqlx::migrate!("./migrations")
+        .run(&connection_pool)
+        .await
+        .expect("Failed to migrate");
+    connection_pool
+}
 #[actix_rt::test]
 async fn health_check_works() {
     // Arrange
-    let url = format!("{}/health_check", spawn_app());
+    let url = format!("{}/health_check", spawn_app().await.address);
     let client = reqwest::Client::new();
     let response = client
         .get(url)
@@ -17,32 +76,15 @@ async fn health_check_works() {
     assert_eq!(Some(0), response.content_length());
 }
 
-fn spawn_app() -> String {
-    let listener = TcpListener::bind("127.0.0.1:0").expect("failed to bind to random port");
-    let port = listener.local_addr().unwrap().port();
-    let server = zero2prod::startup::run(listener).expect("Failed to bind address");
-    // Launch the server as a background task
-    // tokio::spawn returns a handle to the spawned future,
-    // but we have no use for it here, hence the non-binding let
-
-    let _ = tokio::spawn(server);
-    format!("http://127.0.0.1:{}", port)
-}
-
 #[actix_rt::test]
 async fn subscribe_returns_200_for_valid_form_data() {
     //Arrange
-    let address = spawn_app();
-    let configuration = get_config().expect("Failed to read config");
-    let connection_string = configuration.database.connection_string();
-    let _connection = PgConnection::connect(&connection_string)
-        .await
-        .expect("Could not connect to db");
+    let app = spawn_app().await;
     let client = reqwest::Client::new();
     let body = "name=le%20guin&email=ursula_le_guin%40gmail.com";
     //Act
     let response = client
-        .post(format!("{}/subscriptions", &address))
+        .post(format!("{}/subscriptions", &app.address))
         .header(CONTENT_TYPE, "application/x-www-form-urlencoded")
         .body(body)
         .send()
@@ -51,17 +93,18 @@ async fn subscribe_returns_200_for_valid_form_data() {
 
     //Assert
     assert_eq!(response.status().as_u16(), 200);
-    //let saved = sqlx::query!("SELECT email, name from subscriptions",)
-    //    .fetch_one(&mut connection).await
-    //    .expect("could not fetch from subscriptions");
-    //assert_eq!(saved.email, "ursula_le_guin@gmail.com");
-    //assert_eq!(saved.name, "le guin");
+    let saved = sqlx::query!("SELECT email, name from subscriptions",)
+        .fetch_one(&app.pg_pool)
+        .await
+        .expect("could not fetch from subscriptions");
+    assert_eq!(saved.email, "ursula_le_guin@gmail.com");
+    assert_eq!(saved.name, "le guin");
 }
 
 #[actix_rt::test]
 async fn subscribe_returns_400_for_valid_form_data() {
     //Arrange
-    let address = spawn_app();
+    let app = spawn_app().await;
     let client = reqwest::Client::new();
     let bad_requests = vec![
         ("name=le%20guin", "missing the email"),
@@ -72,7 +115,7 @@ async fn subscribe_returns_400_for_valid_form_data() {
     //Act
     for (bad_request, error_message) in bad_requests {
         let response = client
-            .post(format!("{}/subscriptions", &address))
+            .post(format!("{}/subscriptions", &app.address))
             .header(CONTENT_TYPE, "application/x-www-form-urlencoded")
             .body(bad_request)
             .send()
