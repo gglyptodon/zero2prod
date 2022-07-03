@@ -15,6 +15,7 @@ pub async fn subscribe(
     info: web::Form<Info>,
     connection_pool: web::Data<PgPool>,
 ) -> impl Responder {
+    log::info!("Saving new subscriber record");
     match sqlx::query!(
         r#" INSERT INTO subscriptions (id, name, email, subscribed_at) VALUES ($1, $2, $3, $4);
       "#,
@@ -27,9 +28,12 @@ pub async fn subscribe(
     .await
     {
         Err(e) => {
-            println!("Error: {}", e);
+            log::error!("Error saving new subscriber record: {:?}",e);
             HttpResponse::InternalServerError()
         }
-        Ok(_) => HttpResponse::Ok(),
+        Ok(_) => {
+            log::info!("Subscriber record saved successfully");
+            HttpResponse::Ok()
+        },
     }
 }
