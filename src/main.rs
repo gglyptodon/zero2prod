@@ -1,15 +1,14 @@
-use env_logger::Env;
 use sqlx::PgPool;
 use std::net::TcpListener;
+
 use zero2prod::configuration::get_config;
 use zero2prod::startup::run;
+use zero2prod::telemetry::{get_subscriber, init_subscriber};
+
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
-    env_logger::Builder::from_env(Env::default().default_filter_or("info")).init();
-    //let _settings = get_config().unwrap();
-    //println!("settings {:?}", settings);
-    // Bubble up the io::Error if we failed to bind the address
-    // Otherwise call .await on our Server
+    let subscriber = get_subscriber("z2p".into(), "info".into());
+    init_subscriber(subscriber);
     let configuration = get_config().expect("Failed to read config");
     let connection_string = configuration.database.connection_string();
     let connection_pool = PgPool::connect(&connection_string)
