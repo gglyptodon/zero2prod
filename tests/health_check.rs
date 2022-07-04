@@ -2,11 +2,16 @@ use reqwest::header::CONTENT_TYPE;
 use sqlx::{Connection, Executor, PgConnection, PgPool};
 use std::net::TcpListener;
 use zero2prod::configuration::{get_config, DbSettings};
-
+use zero2prod::telemetry::{get_subscriber,init_subscriber};
+use once_cell::sync::Lazy;
 pub struct TestApp {
     pg_pool: PgPool,
     address: String,
 }
+static TRACING: Lazy<()> = Lazy::new(||{
+    let subscriber = get_subscriber("z2p_healthcheck".into(), "debug".into());
+    init_subscriber(subscriber);
+});
 /// spawns app at random port
 /// reads configuration file
 /// overwrites database name (from config file) to random uuid
@@ -15,6 +20,8 @@ pub struct TestApp {
 /// creates a new server instance with the connection pool
 /// spawns the server and returns a TestApp with server address and the connection pool
 async fn spawn_app() -> TestApp {
+
+    Lazy::force(&TRACING);
     let listener = TcpListener::bind("127.0.0.1:0").expect("failed to bind to random port");
     let port = listener.local_addr().unwrap().port();
 
