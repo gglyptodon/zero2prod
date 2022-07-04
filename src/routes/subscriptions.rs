@@ -18,7 +18,7 @@ pub async fn subscribe(
 ) -> impl Responder {
     let request_id = Uuid::new_v4();
     let request_span = tracing::info_span!("Adding new subscriber", %request_id, subscriber_email = %info.email, subcriber_name=%info.name);
-    let request_span_guard = request_span.enter();
+    let _request_span_guard = request_span.enter();
     tracing::info!(
         "Request {}: Saving new subscriber record: name: '{}', email: '{}'",
         request_id,
