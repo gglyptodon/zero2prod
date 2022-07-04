@@ -12,19 +12,19 @@ pub struct Info {
 }
 
 #[post("/subscriptions")]
+#[tracing::instrument(
+name="Adding new subscriber",
+skip(info, connection_pool),
+fields(
+request_id = %Uuid::new_v4(),
+subscriber_email = %info.email,
+subscriber_name = %info.name
+)
+)]
 pub async fn subscribe(
     info: web::Form<Info>,
     connection_pool: web::Data<PgPool>,
 ) -> impl Responder {
-    let request_id = Uuid::new_v4();
-    let request_span = tracing::info_span!("Adding new subscriber", %request_id, subscriber_email = %info.email, subcriber_name=%info.name);
-    let _request_span_guard = request_span.enter();
-    tracing::info!(
-        "Request {}: Saving new subscriber record: name: '{}', email: '{}'",
-        request_id,
-        info.name,
-        info.email
-    );
     let query_span = tracing::info_span!("Saving subscriber");
     match sqlx::query!(
         r#" INSERT INTO subscriptions (id, name, email, subscribed_at) VALUES ($1, $2, $3, $4);
@@ -40,17 +40,12 @@ pub async fn subscribe(
     {
         Err(e) => {
             tracing::error!(
-                "Request {}: Error saving new subscriber record: {:?}",
-                request_id,
+                "Error saving new subscriber record: {:?}",
                 e
             );
             HttpResponse::InternalServerError()
         }
         Ok(_) => {
-            tracing::info!(
-                "Request {}: Subscriber record saved successfully",
-                request_id
-            );
             HttpResponse::Ok()
         }
     }
