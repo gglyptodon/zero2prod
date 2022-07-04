@@ -16,6 +16,10 @@ log = "0.4.17"
 serde = "1.0"
 serde_derive = "1.0"
 sqlx = { version = "0.6", features = [ "runtime-async-std-native-tls", "postgres", "uuid", "chrono" ] }
+tracing = { version = "0.1.35", features = ["log"] }
+tracing-bunyan-formatter = "0.3.3"
+tracing-futures = "0.2.5"
+tracing-subscriber = { version = "0.3.14", features = ["registry", "env-filter"] }
 uuid = {version = "1.1.2", features = ["v4"]}
 
 
