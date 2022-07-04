@@ -2,8 +2,8 @@ use actix_web::{post, web, HttpResponse, Responder};
 use chrono::Utc;
 use serde_derive::Deserialize;
 use sqlx::PgPool;
-use uuid::Uuid;
 use tracing_futures::Instrument;
+use uuid::Uuid;
 
 #[derive(Deserialize)]
 pub struct Info {
@@ -25,7 +25,7 @@ pub async fn subscribe(
         info.name,
         info.email
     );
-    let query_span =    tracing::info_span!("Saving subscriber");
+    let query_span = tracing::info_span!("Saving subscriber");
     match sqlx::query!(
         r#" INSERT INTO subscriptions (id, name, email, subscribed_at) VALUES ($1, $2, $3, $4);
       "#,
@@ -35,7 +35,7 @@ pub async fn subscribe(
         Utc::now()
     )
     .execute(connection_pool.get_ref())
-        .instrument(query_span)
+    .instrument(query_span)
     .await
     {
         Err(e) => {
