@@ -14,17 +14,12 @@ static TRACING: Lazy<()> = Lazy::new(|| {
     if std::env::var("TEST_LOG").is_ok() {
         let subscriber = get_subscriber("z2p_healthcheck".into(), "debug".into(), stdout);
         init_subscriber(subscriber);
-
     } else {
         let subscriber = get_subscriber("z2p_healthcheck".into(), "debug".into(), sink);
         init_subscriber(subscriber);
-
     }
-    // let subscriber = if std::env::var("TEST_LOG").is_ok(){
-    //    get_subscriber("z2p_healthcheck".into(), "debug".into(), stdout);
-    // }else {  get_subscriber("z2p_healthcheck".into(), "debug".into(), sink);};
-    // init_subscriber(subscriber);
 });
+
 /// spawns app at random port
 /// reads configuration file
 /// overwrites database name (from config file) to random uuid
