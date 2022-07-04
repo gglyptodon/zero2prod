@@ -39,14 +39,9 @@ pub async fn subscribe(
     .await
     {
         Err(e) => {
-            tracing::error!(
-                "Error saving new subscriber record: {:?}",
-                e
-            );
+            tracing::error!("Error saving new subscriber record: {:?}", e);
             HttpResponse::InternalServerError()
         }
-        Ok(_) => {
-            HttpResponse::Ok()
-        }
+        Ok(_) => HttpResponse::Ok(),
     }
 }
