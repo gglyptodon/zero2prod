@@ -1,8 +1,8 @@
+use std::pin::Pin;
 use actix_web::{post, web, HttpResponse, Responder};
 use chrono::Utc;
 use serde_derive::Deserialize;
-use sqlx::PgPool;
-use tracing_futures::Instrument;
+use sqlx::{PgPool};
 use uuid::Uuid;
 
 #[derive(Deserialize)]
@@ -12,21 +12,27 @@ pub struct Info {
 }
 
 #[post("/subscriptions")]
+#[tracing::instrument(
+name="Adding new subscriber",
+skip(info, connection_pool),
+fields(
+subscriber_email = %info.email,
+subscriber_name = %info.name
+)
+)]
 pub async fn subscribe(
     info: web::Form<Info>,
     connection_pool: web::Data<PgPool>,
 ) -> impl Responder {
-    let request_id = Uuid::new_v4();
-    let request_span = tracing::info_span!("Adding new subscriber", %request_id, subscriber_email = %info.email, subcriber_name=%info.name);
-    let _request_span_guard = request_span.enter();
-    tracing::info!(
-        "Request {}: Saving new subscriber record: name: '{}', email: '{}'",
-        request_id,
-        info.name,
-        info.email
-    );
-    let query_span = tracing::info_span!("Saving subscriber");
-    match sqlx::query!(
+    //let query_span = tracing::info_span!("Saving subscriber");
+    match insert_subscriber(&connection_pool, &info).await {
+        Ok(_) => HttpResponse::Ok(),
+        Err(_) => HttpResponse::InternalServerError(),
+    }
+}
+#[tracing::instrument(name="Saving new subscriber to db", skip(info, connection_pool))]
+pub async fn insert_subscriber(connection_pool: &PgPool, info: &Info) -> Result<(), sqlx::Error> {
+    sqlx::query!(
         r#" INSERT INTO subscriptions (id, name, email, subscribed_at) VALUES ($1, $2, $3, $4);
       "#,
         Uuid::new_v4(),
@@ -34,24 +40,11 @@ pub async fn subscribe(
         info.email,
         Utc::now()
     )
-    .execute(connection_pool.get_ref())
-    .instrument(query_span)
+    .execute(Pin::new(connection_pool).get_ref())
     .await
-    {
-        Err(e) => {
-            tracing::error!(
-                "Request {}: Error saving new subscriber record: {:?}",
-                request_id,
-                e
-            );
-            HttpResponse::InternalServerError()
-        }
-        Ok(_) => {
-            tracing::info!(
-                "Request {}: Subscriber record saved successfully",
-                request_id
-            );
-            HttpResponse::Ok()
-        }
-    }
+    .map_err(|e| {
+        tracing::error!("Failed to execute query:{:?}", e);
+        e
+    })?;
+    Ok(())
 }
