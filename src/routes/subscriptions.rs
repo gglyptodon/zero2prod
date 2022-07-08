@@ -1,8 +1,8 @@
 use std::pin::Pin;
 use actix_web::{post, web, HttpResponse, Responder};
-use chrono::Utc;
 use serde_derive::Deserialize;
 use sqlx::{PgPool};
+use chrono::Utc;
 use uuid::Uuid;
 
 #[derive(Deserialize)]
