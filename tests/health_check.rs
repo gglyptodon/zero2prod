@@ -3,7 +3,7 @@ use reqwest::header::CONTENT_TYPE;
 use sqlx::{Connection, Executor, PgConnection, PgPool};
 use std::io::{sink, stdout};
 use std::net::TcpListener;
-use zero2prod::configuration::{get_config, DbSettings};
+use zero2prod::configuration::{get_config, ApplicationSettings, DbSettings};
 use zero2prod::telemetry::{get_subscriber, init_subscriber};
 pub struct TestApp {
     pg_pool: PgPool,
@@ -29,10 +29,11 @@ static TRACING: Lazy<()> = Lazy::new(|| {
 /// spawns the server and returns a TestApp with server address and the connection pool
 async fn spawn_app() -> TestApp {
     Lazy::force(&TRACING);
+    //let listener = TcpListener::bind("127.0.0.1:0").expect("failed to bind to random port");
     let listener = TcpListener::bind("127.0.0.1:0").expect("failed to bind to random port");
     let port = listener.local_addr().unwrap().port();
 
-    let mut configuration = get_config().expect("Failed to read config");
+    let mut configuration = get_config().expect("Failed to read config"); //
     configuration.database.database_name = uuid::Uuid::new_v4().to_string();
     // let connection_string = configuration.database.connection_string();
     let connection_pool = configure_db(&configuration.database).await;
