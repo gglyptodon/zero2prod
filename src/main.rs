@@ -11,8 +11,8 @@ async fn main() -> std::io::Result<()> {
     init_subscriber(subscriber);
     let configuration = get_config().expect("Failed to read config");
     let connection_string = configuration.database.connection_string();
-    let connection_pool = PgPool::connect_lazy(&connection_string)
-        .expect("Could not connect to db");
-    let listener = TcpListener::bind("localhost:8000").expect("failing to bind to port 8000");
+    let connection_pool =
+        PgPool::connect_lazy(&connection_string).expect("Could not connect to db");
+    let listener = TcpListener::bind(format!("{}:{}", configuration.application.application_host, configuration.application.application_port)).expect("failing to bind to port 8000");
     run(listener, connection_pool)?.await
 }
