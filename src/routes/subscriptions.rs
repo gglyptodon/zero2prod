@@ -1,8 +1,8 @@
-use std::pin::Pin;
 use actix_web::{post, web, HttpResponse, Responder};
-use serde_derive::Deserialize;
-use sqlx::{PgPool};
 use chrono::Utc;
+use serde_derive::Deserialize;
+use sqlx::PgPool;
+use std::pin::Pin;
 use uuid::Uuid;
 
 #[derive(Deserialize)]
@@ -30,7 +30,7 @@ pub async fn subscribe(
         Err(_) => HttpResponse::InternalServerError(),
     }
 }
-#[tracing::instrument(name="Saving new subscriber to db", skip(info, connection_pool))]
+#[tracing::instrument(name = "Saving new subscriber to db", skip(info, connection_pool))]
 pub async fn insert_subscriber(connection_pool: &PgPool, info: &Info) -> Result<(), sqlx::Error> {
     sqlx::query!(
         r#" INSERT INTO subscriptions (id, name, email, subscribed_at) VALUES ($1, $2, $3, $4);
