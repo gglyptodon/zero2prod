@@ -1,9 +1,9 @@
-use std::env;
 use config::{Config, Environment, File};
 use serde_derive::{Deserialize, Serialize};
+use std::env;
 use tracing_subscriber::fmt::format;
 
-#[derive(Debug, Deserialize, Serialize,Default)]
+#[derive(Debug, Deserialize, Serialize, Default)]
 pub struct ApplicationSettings {
     pub application_port: u16,
     pub application_host: String,
@@ -38,7 +38,9 @@ impl Settings {
             // Add in the current environment file
             // Default to 'development' env
             // Note that this file is _optional_
-            .add_source(File::with_name(&format!("config/settings-{}.toml", run_mode)).required(false))
+            .add_source(
+                File::with_name(&format!("config/settings-{}.toml", run_mode)).required(false),
+            )
             // Add in a local configuration file
             // This file shouldn't be checked in to git
             .add_source(File::with_name("config/settings-local.toml").required(false))

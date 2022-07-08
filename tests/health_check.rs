@@ -3,7 +3,7 @@ use reqwest::header::CONTENT_TYPE;
 use sqlx::{Connection, Executor, PgConnection, PgPool};
 use std::io::{sink, stdout};
 use std::net::TcpListener;
-use zero2prod::configuration::{get_config, DbSettings, ApplicationSettings};
+use zero2prod::configuration::{get_config, ApplicationSettings, DbSettings};
 use zero2prod::telemetry::{get_subscriber, init_subscriber};
 pub struct TestApp {
     pg_pool: PgPool,
